@@ -1,619 +1,595 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wichita Market - B2B Order & Inventory Hub</title>
-  <!-- Tailwind CSS & Lucide Icons -->
+  <meta charset="UTF-8">
+  <title>Wichita B2B Allocation Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    .badge-urgent { background-color: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
-    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-  <!-- GOOGLE APPS SCRIPT URL -->
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxbLwQVyKJMHFAxwMgwGD1waZCQBpQghWA0YpqldkOl1G0-8sULKQ8LeUf2JGkzz6m5oA/exec";
-  </script>
-
-  <!-- NAVBAR -->
-  <header class="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white text-lg">W</div>
-        <div>
-          <span class="text-base font-bold tracking-tight block">Wichita Distribution Hub</span>
-          <span class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">6 Stores Network</span>
+  <!-- LOGIN OVERLAY -->
+  <div id="loginSection" class="fixed inset-0 bg-slate-900 bg-opacity-80 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 border border-slate-100">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg shadow-blue-500/30">
+          <i class="fa-solid fa-boxes-stacked"></i>
         </div>
+        <h2 class="text-2xl font-bold text-slate-900">Wichita Market Portal</h2>
+        <p class="text-sm text-slate-500 mt-1">Enterprise Ordering & Allocation System</p>
       </div>
 
-      <div class="flex items-center space-x-3">
-        <span id="authBadge" class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 font-medium">Guest</span>
-        
-        <button id="cartBtn" onclick="toggleCartModal()" class="relative p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 transition hidden">
-          <i data-lucide="shopping-cart" class="w-4 h-4"></i>
-          <span id="cartCountBadge" class="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span>
-        </button>
+      <div id="loginError" class="hidden mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200"></div>
 
-        <button id="logoutBtn" onclick="logout()" class="px-3 py-1.5 bg-rose-950/60 text-rose-300 hover:bg-rose-900 border border-rose-800/50 rounded-xl text-xs font-semibold transition hidden">
-          Logout
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Username / ID</label>
+          <input type="text" id="usernameInput" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="WICHITA or Amirali">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Password</label>
+          <input type="password" id="passwordInput" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="••••••••">
+        </div>
+        <button onclick="handleLogin()" id="loginBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition flex items-center justify-center gap-2">
+          <span>Sign In & Open Portal</span>
+          <i class="fa-solid fa-arrow-right text-sm"></i>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+      <div class="flex items-center gap-3">
+        <span class="p-2 bg-blue-600 text-white rounded-lg"><i class="fa-solid fa-layer-group"></i></span>
+        <h1 class="font-bold text-lg text-slate-900">Wichita Hub <span id="userRoleBadge" class="ml-2 text-xs font-semibold px-2.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200"></span></h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="switchTab('catalog')" class="tab-btn px-3 py-2 text-sm font-medium rounded-lg text-blue-600 bg-blue-50" id="tabBtn-catalog"><i class="fa-solid fa-cart-flatbed mr-1.5"></i>Catalog</button>
+        <button onclick="switchTab('orders')" class="tab-btn px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900" id="tabBtn-orders"><i class="fa-solid fa-clock-rotate-left mr-1.5"></i>Orders</button>
+        <button onclick="switchTab('ledger')" class="tab-btn px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900" id="tabBtn-ledger"><i class="fa-solid fa-file-invoice-dollar mr-1.5"></i>Ledger</button>
+        <button onclick="logout()" class="text-sm font-medium text-red-600 hover:text-red-700 ml-3"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Logout</button>
       </div>
     </div>
   </header>
 
-  <!-- ================= AUTH VIEW (LOGIN SCREEN) ================= -->
-  <div id="authScreen" class="flex-1 flex items-center justify-center p-4">
-    <div class="max-w-md w-full bg-white rounded-3xl p-8 border border-slate-200 shadow-xl">
-      <div class="text-center mb-6">
-        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-          <i data-lucide="lock" class="w-6 h-6"></i>
+  <!-- MAIN VIEW -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+    <!-- KPI CARDS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8" id="kpiContainer">
+      <div onclick="drillDownKPI('velocity')" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md cursor-pointer transition">
+        <div class="flex items-center justify-between text-slate-500 mb-2">
+          <span class="text-xs uppercase font-semibold">7-Day Sales</span>
+          <i class="fa-solid fa-chart-line text-blue-500"></i>
         </div>
-        <h2 class="text-xl font-bold text-slate-900">Sign in to Portal</h2>
-        <p class="text-xs text-slate-500 mt-1">Select your portal role to continue</p>
+        <div class="text-2xl font-bold text-slate-900" id="kpi7DaySales">--</div>
+        <p class="text-xs text-slate-400 mt-1">Click to view fast movers</p>
       </div>
 
-      <div class="flex p-1 bg-slate-100 rounded-2xl mb-6">
-        <button id="tabCustomerBtn" onclick="setAuthTab('customer')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-white shadow-sm text-indigo-600 transition">Customer (Dealer)</button>
-        <button id="tabAdminBtn" onclick="setAuthTab('admin')" class="flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition">Admin (Amirali)</button>
+      <div onclick="drillDownKPI('allocated')" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md cursor-pointer transition">
+        <div class="flex items-center justify-between text-slate-500 mb-2">
+          <span class="text-xs uppercase font-semibold">Live Allocation</span>
+          <i class="fa-solid fa-cubes text-emerald-500"></i>
+        </div>
+        <div class="text-2xl font-bold text-slate-900" id="kpiLiveAlloc">--</div>
+        <p class="text-xs text-slate-400 mt-1">Available order pool</p>
       </div>
 
-      <div class="space-y-4">
-        <div>
-          <label class="text-xs font-semibold text-slate-600 block mb-1">User ID</label>
-          <input type="text" id="loginUser" value="WICHITA" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none" />
+      <div id="adminKpiCard1" onclick="drillDownKPI('marketStock')" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md cursor-pointer transition">
+        <div class="flex items-center justify-between text-slate-500 mb-2">
+          <span class="text-xs uppercase font-semibold">Total Wichita Stock</span>
+          <i class="fa-solid fa-warehouse text-purple-500"></i>
+        </div>
+        <div class="text-2xl font-bold text-slate-900" id="kpiTotalStock">--</div>
+        <p class="text-xs text-slate-400 mt-1">6 Stores + Main Hub</p>
+      </div>
+
+      <div id="adminKpiCard2" class="hidden bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between text-slate-500 mb-2">
+          <span class="text-xs uppercase font-semibold">Credit Balance</span>
+          <i class="fa-solid fa-wallet text-amber-500"></i>
+        </div>
+        <div class="text-2xl font-bold text-slate-900" id="kpiAvailableCredit">--</div>
+        <p class="text-xs text-slate-400 mt-1">Available USD Balance</p>
+      </div>
+    </div>
+
+    <!-- CATALOG VIEW -->
+    <div id="catalogTab" class="tab-content">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+        <div class="p-4 border-b border-slate-200 flex flex-wrap gap-4 items-center justify-between bg-slate-50">
+          <div class="flex items-center gap-3 flex-1 min-w-[280px]">
+            <div class="relative w-full">
+              <input type="text" id="catalogSearch" oninput="filterCatalog()" placeholder="Search Device or SKU..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="exportCatalogCSV()" class="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg border border-slate-300 shadow-sm flex items-center gap-1.5"><i class="fa-solid fa-download text-xs"></i>Export Catalog</button>
+            <button onclick="openCartModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm flex items-center gap-2">
+              <i class="fa-solid fa-cart-shopping"></i>
+              <span>View Cart (<span id="cartCount">0</span>)</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm" id="catalogTable">
+            <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-semibold">
+              <tr>
+                <th class="py-3 px-4">SKU</th>
+                <th class="py-3 px-4">Device Description</th>
+                <th class="py-3 px-4 text-right">Unit Price (EA)</th>
+                <th class="py-3 px-4 text-center">Allocated</th>
+                <th class="py-3 px-4 text-center">Recommended</th>
+                <th class="py-3 px-4 text-center admin-col hidden">Main Hub</th>
+                <th class="py-3 px-4 text-center admin-col hidden">Store Total</th>
+                <th class="py-3 px-4 text-center w-36">Order (Pieces)</th>
+              </tr>
+            </thead>
+            <tbody id="catalogTbody" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS VIEW -->
+    <div id="ordersTab" class="tab-content hidden">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+          <h3 class="font-bold text-slate-800 text-base">Order History & Fulfillment</h3>
+          <button onclick="exportOrdersCSV()" class="px-3 py-1.5 bg-white text-slate-700 text-sm font-medium rounded-lg border border-slate-300 shadow-sm"><i class="fa-solid fa-file-csv mr-1"></i>Export Orders</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm" id="ordersTable">
+            <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-semibold">
+              <tr>
+                <th class="py-3 px-4">Order ID</th>
+                <th class="py-3 px-4">Date</th>
+                <th class="py-3 px-4">SKU & Item</th>
+                <th class="py-3 px-4 text-center">Pieces</th>
+                <th class="py-3 px-4 text-right">Total ($)</th>
+                <th class="py-3 px-4 text-center">Urgent</th>
+                <th class="py-3 px-4 text-center">Status</th>
+                <th class="py-3 px-4 text-center admin-col hidden">Action</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTbody" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEDGER VIEW -->
+    <div id="ledgerTab" class="tab-content hidden">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+          <div>
+            <h3 class="font-bold text-slate-800 text-base">Wichita Market Ledger</h3>
+            <p class="text-xs text-slate-500">Official statement of executed orders & debits</p>
+          </div>
+          <button onclick="exportLedgerCSV()" class="px-3 py-1.5 bg-white text-slate-700 text-sm font-medium rounded-lg border border-slate-300 shadow-sm"><i class="fa-solid fa-file-csv mr-1"></i>Download Statement</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm" id="ledgerTable">
+            <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-semibold">
+              <tr>
+                <th class="py-3 px-4">Tx ID</th>
+                <th class="py-3 px-4">Date</th>
+                <th class="py-3 px-4">Type</th>
+                <th class="py-3 px-4">Reference / PO</th>
+                <th class="py-3 px-4 text-right">Debit ($)</th>
+                <th class="py-3 px-4 text-right">Credit ($)</th>
+                <th class="py-3 px-4 text-right font-bold">Balance ($)</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerTbody" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- CART MODAL -->
+  <div id="cartModal" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 border border-slate-100 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center pb-4 border-b border-slate-200">
+        <h3 class="font-bold text-lg text-slate-900">Review Order Requisition</h3>
+        <button onclick="closeCartModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto py-4" id="cartItemsContainer"></div>
+
+      <div class="pt-4 border-t border-slate-200 space-y-4">
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="urgentOrderCheck" class="w-4 h-4 text-red-600 rounded">
+          <label for="urgentOrderCheck" class="text-sm font-semibold text-red-600 flex items-center gap-1"><i class="fa-solid fa-truck-fast"></i> Flag as Urgent Dispatch</label>
         </div>
         <div>
-          <label class="text-xs font-semibold text-slate-600 block mb-1">Password</label>
-          <input type="password" id="loginPass" value="123456" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none" />
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Customer Notes / Dispatch Instructions</label>
+          <input type="text" id="orderNotesInput" placeholder="Store notes..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
-        <div id="loginError" class="text-xs text-rose-500 font-semibold hidden">Invalid ID or password.</div>
-        <button onclick="handleLogin()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm shadow-md transition">
-          Enter Dashboard
-        </button>
+        <div class="flex justify-between items-center font-bold text-base text-slate-900">
+          <span>Estimated Total:</span>
+          <span id="cartTotalVal">$0.00</span>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button onclick="closeCartModal()" class="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded-lg">Continue Shopping</button>
+          <button onclick="submitCartOrder()" id="submitOrderBtn" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm">Confirm & Place Order</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ================= APP CONTENT ================= -->
-  <main id="appContent" class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full hidden">
-
-    <!-- KPI STRIP -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Wichita Catalog SKUs</span>
-        <span id="kpiSkuCount" class="text-xl font-black text-slate-900 mt-1 block">--</span>
-      </div>
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Live Allocated Units</span>
-        <span id="kpiAllocUnits" class="text-xl font-black text-emerald-600 mt-1 block">--</span>
-      </div>
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">7-Day Sales Velocity</span>
-        <span id="kpiVelocity" class="text-xl font-black text-indigo-600 mt-1 block">--</span>
-      </div>
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm" id="kpiFourthCard">
-        <span id="kpiFourthTitle" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Recent Orders</span>
-        <span id="kpiFourthValue" class="text-xl font-black text-slate-900 mt-1 block">--</span>
-      </div>
-    </div>
-
-    <!-- ================= CUSTOMER PORTAL ================= -->
-    <section id="customerPortal" class="hidden">
-      <!-- Search & Filters -->
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div class="flex items-center gap-3 w-full sm:w-auto">
-          <input type="text" id="custSearch" oninput="renderCustomerCatalog()" placeholder="Search iPhone, Samsung, Motorola, etc..." class="px-4 py-2 bg-slate-50 border rounded-xl text-sm w-full sm:w-80 outline-none focus:ring-2 focus:ring-indigo-500" />
-          <select id="custStoreSelect" class="px-3 py-2 bg-slate-50 border rounded-xl text-sm font-semibold text-slate-700 outline-none">
-            <option value="WICHITA MARKET">All Wichita</option>
-            <option value="2039 21ST">2039 21ST</option>
-            <option value="240 WEST">240 WEST</option>
-            <option value="2559 W PAWNEE">2559 W PAWNEE</option>
-            <option value="2811 HYDRAULIC">2811 HYDRAULIC</option>
-            <option value="4900 E PAWNEE">4900 E PAWNEE</option>
-            <option value="7320 CENTRAL/RIDGE">7320 CENTRAL/RIDGE</option>
-          </select>
+  <!-- ADMIN IDOO PO MODAL -->
+  <div id="idooModal" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100">
+      <h3 class="font-bold text-lg text-slate-900 mb-4">Confirm IDOO Execution</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Order ID</label>
+          <input type="text" id="modalOrderId" disabled class="w-full px-3 py-2 bg-slate-100 text-sm border border-slate-300 rounded-lg">
         </div>
-        <div class="text-xs text-slate-500 font-medium">
-          Note: Prices are per <span class="font-bold text-slate-800">Piece (EA)</span>. Pack contains 20 pcs (iPhone) or 5 pcs.
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">IDOO PO Number</label>
+          <input type="text" id="modalIdooPo" placeholder="PO-123456" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
         </div>
-      </div>
-
-      <!-- Catalog Grid -->
-      <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-10">
-        <!-- Injected via JS -->
-      </div>
-
-      <!-- Customer Orders Table -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-        <h3 class="font-bold text-base text-slate-900 mb-4 flex items-center gap-2">
-          <i data-lucide="package" class="w-4 h-4 text-indigo-600"></i>
-          My Orders & IDOO Execution Status
-        </h3>
-        <div class="overflow-x-auto custom-scroll">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-slate-50 text-slate-500 border-b">
-                <th class="p-3 font-semibold">Order ID</th>
-                <th class="p-3 font-semibold">Date</th>
-                <th class="p-3 font-semibold">Store</th>
-                <th class="p-3 font-semibold">Device</th>
-                <th class="p-3 font-semibold text-center">PCS</th>
-                <th class="p-3 font-semibold">Unit Price</th>
-                <th class="p-3 font-semibold">Total</th>
-                <th class="p-3 font-semibold">Status</th>
-                <th class="p-3 font-semibold">IDOO Ref / PO</th>
-                <th class="p-3 font-semibold">Confirmed Value ($)</th>
-              </tr>
-            </thead>
-            <tbody id="custOrdersBody"></tbody>
-          </table>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Confirmed Total Value ($)</label>
+          <input type="number" step="0.01" id="modalConfirmedVal" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
         </div>
-      </div>
-    </section>
-
-    <!-- ================= ADMIN PORTAL ================= -->
-    <section id="adminPortal" class="hidden">
-      <!-- Admin Sub Tabs -->
-      <div class="flex gap-2 mb-6 border-b border-slate-200 pb-3">
-        <button onclick="switchAdminTab('stores')" id="tabStoresBtn" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white transition">6 Stores Stock Breakdown</button>
-        <button onclick="switchAdminTab('orders')" id="tabOrdersBtn" class="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border transition">Orders Desk (IDOO)</button>
-        <button onclick="switchAdminTab('backorders')" id="tabBackordersBtn" class="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border transition">Requested Backorders</button>
-      </div>
-
-      <!-- TAB 1: STORES BREAKDOWN -->
-      <div id="adminTabStores">
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
-            <div>
-              <h3 class="font-bold text-base text-slate-900">Wichita Store-Level Availability Matrix</h3>
-              <p class="text-xs text-slate-500">Real-time counts across retail branches, main hub, and 7-day velocity</p>
-            </div>
-            <input type="text" id="storeMatrixSearch" oninput="renderStoreMatrix()" placeholder="Filter store stock..." class="px-3 py-1.5 bg-slate-50 border rounded-xl text-xs w-60 outline-none" />
-          </div>
-          <div class="overflow-x-auto custom-scroll">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-slate-50 text-slate-600 border-b">
-                  <th class="p-2.5 font-bold">Device Name</th>
-                  <th class="p-2.5 font-semibold text-center">2039 21ST</th>
-                  <th class="p-2.5 font-semibold text-center">240 WEST</th>
-                  <th class="p-2.5 font-semibold text-center">2559 PAWNEE</th>
-                  <th class="p-2.5 font-semibold text-center">2811 HYDRAULIC</th>
-                  <th class="p-2.5 font-semibold text-center">4900 PAWNEE</th>
-                  <th class="p-2.5 font-semibold text-center">7320 CENTRAL</th>
-                  <th class="p-2.5 font-bold text-center bg-slate-100">Store Level</th>
-                  <th class="p-2.5 font-bold text-center bg-indigo-50 text-indigo-700">MAIN HUB</th>
-                  <th class="p-2.5 font-bold text-center">Market TTL</th>
-                  <th class="p-2.5 font-bold text-center text-rose-600">7D Sales</th>
-                </tr>
-              </thead>
-              <tbody id="storeMatrixBody"></tbody>
-            </table>
-          </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Admin Remarks</label>
+          <input type="text" id="modalAdminNotes" placeholder="Remarks..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
         </div>
-      </div>
-
-      <!-- TAB 2: ORDERS DESK -->
-      <div id="adminTabOrders" class="hidden">
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <h3 class="font-bold text-base text-slate-900 mb-4">Pending Execution in IDOO Portal</h3>
-          <div class="overflow-x-auto custom-scroll">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-slate-50 text-slate-600 border-b">
-                  <th class="p-3 font-semibold">Order ID</th>
-                  <th class="p-3 font-semibold">Time</th>
-                  <th class="p-3 font-semibold">Store</th>
-                  <th class="p-3 font-semibold">Device</th>
-                  <th class="p-3 font-semibold text-center">PCS</th>
-                  <th class="p-3 font-semibold">Order Total</th>
-                  <th class="p-3 font-semibold">Urgency</th>
-                  <th class="p-3 font-semibold">Status</th>
-                  <th class="p-3 font-semibold">IDOO Action</th>
-                </tr>
-              </thead>
-              <tbody id="adminOrdersBody"></tbody>
-            </table>
-          </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button onclick="closeIdooModal()" class="px-4 py-2 text-sm text-slate-600">Cancel</button>
+          <button onclick="confirmIdooExecution()" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg">Record PO & Post Ledger</button>
         </div>
-      </div>
-
-      <!-- TAB 3: BACKORDERS -->
-      <div id="adminTabBackorders" class="hidden">
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <h3 class="font-bold text-base text-slate-900 mb-4">Demand for Unallocated Stock (Requested Allocations)</h3>
-          <div class="overflow-x-auto custom-scroll">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-slate-50 text-slate-600 border-b">
-                  <th class="p-3 font-semibold">Req ID</th>
-                  <th class="p-3 font-semibold">Date</th>
-                  <th class="p-3 font-semibold">Store</th>
-                  <th class="p-3 font-semibold">Device</th>
-                  <th class="p-3 font-semibold text-center">Requested PCS</th>
-                  <th class="p-3 font-semibold">Available at Time</th>
-                  <th class="p-3 font-semibold">Notes</th>
-                  <th class="p-3 font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody id="adminBackordersBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- CART DRAWER -->
-  <div id="cartModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-end hidden">
-    <div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-6">
-      <div class="flex justify-between items-center pb-4 border-b">
-        <h3 class="text-base font-bold text-slate-900">Your Order Cart (In Pieces)</h3>
-        <button onclick="toggleCartModal()"><i data-lucide="x" class="w-5 h-5 text-slate-400"></i></button>
-      </div>
-
-      <div id="cartItemsList" class="flex-1 overflow-y-auto py-4 space-y-3 custom-scroll"></div>
-
-      <div class="pt-4 border-t space-y-3">
-        <label class="flex items-center space-x-3 p-3 rounded-xl border border-rose-200 bg-rose-50/50 cursor-pointer">
-          <input type="checkbox" id="urgentCheck" class="w-4 h-4 text-rose-600 rounded" />
-          <span class="text-xs font-bold text-rose-700">Urgent Wichita Dispatch</span>
-        </label>
-
-        <textarea id="cartNotes" rows="2" placeholder="Optional notes for distribution team..." class="w-full text-xs p-2.5 border rounded-xl bg-slate-50 outline-none"></textarea>
-
-        <div class="flex justify-between items-center text-sm">
-          <span class="text-slate-500 font-medium">Estimated Total:</span>
-          <span id="cartTotalPrice" class="font-black text-slate-900 text-lg">$0.00</span>
-        </div>
-
-        <button onclick="checkoutOrder()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition">
-          Confirm Order
-        </button>
       </div>
     </div>
   </div>
 
   <script>
-    // System State
-    let authRole = null;
-    let catalog = [];
-    let storeMatrix = [];
-    let ordersList = [];
-    let backordersList = [];
-    let creditList = [];
-    let cart = [];
-
-    window.onload = () => {
-      lucide.createIcons();
-    };
-
-    function setAuthTab(role) {
-      const isCust = role === 'customer';
-      document.getElementById("tabCustomerBtn").className = isCust ? "flex-1 py-2 text-xs font-bold rounded-xl bg-white shadow-sm text-indigo-600 transition" : "flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition";
-      document.getElementById("tabAdminBtn").className = !isCust ? "flex-1 py-2 text-xs font-bold rounded-xl bg-white shadow-sm text-indigo-600 transition" : "flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition";
-      document.getElementById("loginUser").value = isCust ? "WICHITA" : "Amirali";
-      document.getElementById("loginPass").value = isCust ? "123456" : "2956838rR";
-    }
+    let currentUser = null;
+    let masterCatalog = [];
+    let cart = {};
+    let rawLedger = [];
+    let rawOrders = [];
 
     function handleLogin() {
-      const u = document.getElementById("loginUser").value.trim();
-      const p = document.getElementById("loginPass").value.trim();
+      const u = document.getElementById('usernameInput').value;
+      const p = document.getElementById('passwordInput').value;
+      const btn = document.getElementById('loginBtn');
+      const errBox = document.getElementById('loginError');
 
-      if (u === "WICHITA" && p === "123456") {
-        authRole = "customer";
-      } else if (u === "Amirali" && p === "2956838rR") {
-        authRole = "admin";
-      } else {
-        document.getElementById("loginError").classList.remove("hidden");
-        return;
-      }
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+      errBox.classList.add('hidden');
 
-      document.getElementById("loginError").classList.add("hidden");
-      document.getElementById("authScreen").classList.add("hidden");
-      document.getElementById("appContent").classList.remove("hidden");
-      document.getElementById("logoutBtn").classList.remove("hidden");
-      document.getElementById("authBadge").textContent = authRole === 'admin' ? "Admin (Amirali)" : "Customer (Wichita)";
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.disabled = false;
+          btn.innerHTML = '<span>Sign In & Open Portal</span><i class="fa-solid fa-arrow-right text-sm"></i>';
+          if (res.success) {
+            currentUser = res;
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('userRoleBadge').innerText = res.role.toUpperCase() + ' : ' + res.user;
 
-      if (authRole === 'customer') {
-        document.getElementById("customerPortal").classList.remove("hidden");
-        document.getElementById("cartBtn").classList.remove("hidden");
-      } else {
-        document.getElementById("adminPortal").classList.remove("hidden");
-        document.getElementById("kpiFourthTitle").textContent = "Available Credit";
-      }
-
-      fetchData();
+            if (res.role === 'admin') {
+              document.querySelectorAll('.admin-col').forEach(el => el.classList.remove('hidden'));
+              document.getElementById('adminKpiCard1').classList.remove('hidden');
+              document.getElementById('adminKpiCard2').classList.remove('hidden');
+            }
+            loadPortalData();
+          } else {
+            errBox.innerText = res.message;
+            errBox.classList.remove('hidden');
+          }
+        })
+        .withFailureHandler(err => {
+          btn.disabled = false;
+          btn.innerHTML = 'Sign In';
+          alert('Network Error: ' + err);
+        })
+        .authenticateUser(u, p);
     }
 
     function logout() {
-      authRole = null;
-      document.getElementById("authScreen").classList.remove("hidden");
-      document.getElementById("appContent").classList.add("hidden");
-      document.getElementById("logoutBtn").classList.add("hidden");
-      document.getElementById("cartBtn").classList.add("hidden");
-      document.getElementById("customerPortal").classList.add("hidden");
-      document.getElementById("adminPortal").classList.add("hidden");
+      location.reload();
     }
 
-    async function fetchData() {
-      try {
-        const res = await fetch(`${API_URL}?action=getData`);
-        const data = await res.json();
-        if (data.status === "success") {
-          catalog = data.catalog || [];
-          storeMatrix = data.storeInventory || [];
-          ordersList = data.orders || [];
-          backordersList = data.requests || [];
-          creditList = data.credit || [];
+    function loadPortalData() {
+      google.script.run
+        .withSuccessHandler(res => {
+          masterCatalog = res.catalog || [];
+          document.getElementById('kpi7DaySales').innerText = res.kpis.sales7Day || 0;
+          document.getElementById('kpiLiveAlloc').innerText = res.kpis.allocatedUnits || 0;
 
-          updateKPIs();
-          if (authRole === 'customer') {
-            renderCustomerCatalog();
-            renderCustomerOrders();
-          } else {
-            renderStoreMatrix();
-            renderAdminOrders();
-            renderAdminBackorders();
+          if (currentUser.role === 'admin') {
+            document.getElementById('kpiTotalStock').innerText = res.kpis.marketUnits || 0;
+            document.getElementById('kpiAvailableCredit').innerText = '$' + (res.kpis.credit.available || 0).toLocaleString();
           }
-        }
-      } catch (err) {
-        console.error("Fetch failed", err);
-      }
+
+          renderCatalog(masterCatalog);
+        })
+        .getCatalogData(currentUser.role);
+
+      loadOrdersAndLedger();
     }
 
-    function updateKPIs() {
-      document.getElementById("kpiSkuCount").textContent = catalog.length;
-      const totalAlloc = catalog.reduce((s, i) => s + (i.allocation || 0), 0);
-      document.getElementById("kpiAllocUnits").textContent = totalAlloc + " PCS";
+    function loadOrdersAndLedger() {
+      google.script.run
+        .withSuccessHandler(res => {
+          rawOrders = res.orders || [];
+          rawLedger = res.ledger || [];
+          renderOrders(rawOrders);
+          renderLedger(rawLedger);
+        })
+        .getLedgerAndOrders(currentUser.user);
+    }
 
-      const totalVel = storeMatrix.reduce((s, i) => s + (i.velocity7d || 0), 0);
-      document.getElementById("kpiVelocity").textContent = totalVel + " Sold";
+    function renderCatalog(items) {
+      const tbody = document.getElementById('catalogTbody');
+      tbody.innerHTML = '';
 
-      if (authRole === 'customer') {
-        document.getElementById("kpiFourthValue").textContent = Math.max(0, ordersList.length - 1);
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+
+        let adminCells = '';
+        if (currentUser.role === 'admin') {
+          adminCells = `
+            <td class="py-3 px-4 text-center font-medium">${item.hubStock || 0}</td>
+            <td class="py-3 px-4 text-center font-medium">${item.storeLevel || 0}</td>
+          `;
+        }
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono text-xs text-slate-500">${item.sku}</td>
+          <td class="py-3 px-4 font-medium text-slate-800">${item.device}</td>
+          <td class="py-3 px-4 text-right font-semibold text-slate-900">$${item.unitPrice.toFixed(2)}</td>
+          <td class="py-3 px-4 text-center"><span class="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full">${item.allocated}</span></td>
+          <td class="py-3 px-4 text-center"><span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">${item.suggestedUnits}</span></td>
+          ${adminCells}
+          <td class="py-3 px-4 text-center">
+            <input type="number" min="0" value="${cart[item.sku] ? cart[item.sku].qty : 0}" onchange="updateCartItem('${item.sku}', this.value)" class="w-20 text-center py-1 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterCatalog() {
+      const q = document.getElementById('catalogSearch').value.toLowerCase();
+      const filtered = masterCatalog.filter(i => i.device.toLowerCase().includes(q) || i.sku.toLowerCase().includes(q));
+      renderCatalog(filtered);
+    }
+
+    function updateCartItem(sku, val) {
+      const qty = parseInt(val, 10) || 0;
+      const item = masterCatalog.find(i => i.sku === sku);
+      if (!item) return;
+
+      if (qty > 0) {
+        cart[sku] = {
+          sku: item.sku,
+          device: item.device,
+          qty: qty,
+          unitPrice: item.unitPrice,
+          allocated: item.allocated
+        };
       } else {
-        if (creditList.length > 1) {
-          const bal = creditList[creditList.length - 1][4] || 0;
-          document.getElementById("kpiFourthValue").textContent = "$" + Number(bal).toLocaleString();
-        } else {
-          document.getElementById("kpiFourthValue").textContent = "$0.00";
-        }
+        delete cart[sku];
       }
+      document.getElementById('cartCount').innerText = Object.keys(cart).length;
     }
 
-    // CUSTOMER CATALOG
-    function renderCustomerCatalog() {
-      const q = document.getElementById("custSearch").value.toLowerCase();
-      const grid = document.getElementById("catalogGrid");
-      const filtered = catalog.filter(c => c.device.toLowerCase().includes(q) || c.sku.includes(q));
+    function openCartModal() {
+      const container = document.getElementById('cartItemsContainer');
+      container.innerHTML = '';
+      let totalVal = 0;
 
-      grid.innerHTML = filtered.map(item => {
-        const alloc = item.allocation || 0;
-        const vel = item.velocity7d || 0;
-        const recUnits = Math.max(1, Math.ceil(vel * 1.5));
+      const keys = Object.keys(cart);
+      if (keys.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 text-slate-400">Cart is empty. Add quantities from the catalog table.</div>';
+      } else {
+        keys.forEach(k => {
+          const it = cart[k];
+          const lineTotal = it.qty * it.unitPrice;
+          totalVal += lineTotal;
 
-        return `
-          <div class="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col justify-between hover:shadow-sm transition">
-            <div>
-              <div class="flex justify-between items-start mb-2">
-                <span class="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold">${item.sku}</span>
-                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${alloc > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
-                  ${alloc > 0 ? alloc + ' PCS Allocated' : 'Backorder Only'}
-                </span>
+          const isExcess = it.qty > it.allocated;
+          container.innerHTML += `
+            <div class="flex justify-between items-center py-3 border-b border-slate-100 text-sm">
+              <div>
+                <p class="font-semibold text-slate-800">${it.device}</p>
+                <p class="text-xs text-slate-400">SKU: ${it.sku} | ${it.qty} PCS @ $${it.unitPrice.toFixed(2)}/EA</p>
+                ${isExcess ? `<span class="text-[11px] text-amber-600 font-medium">Split: ${it.allocated} Allocated,${it.qty - it.allocated} Backorder</span>` : ''}
               </div>
-              <h4 class="font-bold text-slate-900 text-sm mb-1 leading-snug">${item.device}</h4>
-              <div class="flex items-baseline gap-2 mb-3">
-                <span class="text-base font-black text-indigo-700">$${item.unitPrice.toFixed(2)}</span>
-                <span class="text-[10px] text-slate-400 font-medium">per PC (Pack of ${item.packSize})</span>
-              </div>
-
-              <!-- Recommendation -->
-              <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-2 mb-3 text-[11px] text-indigo-900 flex items-center gap-1.5">
-                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-600 shrink-0"></i>
-                <span>Suggested: <b>${recUnits} PCS</b> (7D Velocity: ${vel})</span>
-              </div>
+              <div class="font-bold text-slate-900">$${lineTotal.toFixed(2)}</div>
             </div>
+          `;
+        });
+      }
 
-            <div class="pt-2 border-t flex items-center gap-2">
-              <input type="number" id="qty-${item.sku}" value="${Math.min(recUnits, alloc > 0 ? alloc : 5)}" min="1" class="w-16 px-2 py-1.5 border rounded-xl text-center text-xs font-bold" />
-              <button onclick="addToCart('${item.sku}')" class="flex-1 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition">
-                Add to Cart
-              </button>
-            </div>
-          </div>
-        `;
-      }).join("");
-      lucide.createIcons();
+      document.getElementById('cartTotalVal').innerText = '$' + totalVal.toFixed(2);
+      document.getElementById('cartModal').classList.remove('hidden');
     }
 
-    function addToCart(sku) {
-      const item = catalog.find(c => c.sku === sku);
-      const qty = parseInt(document.getElementById(`qty-${sku}`).value) || 1;
-      const exist = cart.find(c => c.sku === sku);
-      if (exist) exist.qty += qty;
-      else cart.push({ ...item, qty });
-      updateCartDrawer();
-      toggleCartModal(true);
+    function closeCartModal() {
+      document.getElementById('cartModal').classList.add('hidden');
     }
 
-    function updateCartDrawer() {
-      const badge = document.getElementById("cartCountBadge");
-      const list = document.getElementById("cartItemsList");
-      const totalTxt = document.getElementById("cartTotalPrice");
+    function submitCartOrder() {
+      const keys = Object.keys(cart);
+      if (keys.length === 0) return alert('Cart is empty!');
 
-      const count = cart.reduce((s, i) => s + i.qty, 0);
-      badge.textContent = count;
-
-      let grandTotal = 0;
-      list.innerHTML = cart.map((i, idx) => {
-        const itemTot = i.qty * i.unitPrice;
-        grandTotal += itemTot;
-        const isBackorder = i.qty > (i.allocation || 0);
-        return `
-          <div class="p-3 bg-slate-50 border rounded-xl flex justify-between items-center text-xs">
-            <div>
-              <div class="font-bold text-slate-900">${i.device}</div>
-              <div class="text-[11px] text-slate-500">${i.qty} PCS × $${i.unitPrice.toFixed(2)}</div>
-              ${isBackorder ? `<span class="text-[10px] text-amber-700 font-bold block mt-0.5">⚠️ ${i.qty - (i.allocation || 0)} PCS will route to Backorder</span>` : ''}
-            </div>
-            <div class="text-right">
-              <span class="font-bold text-indigo-700 block">$${itemTot.toFixed(2)}</span>
-              <button onclick="cart.splice(${idx},1);updateCartDrawer();" class="text-rose-500 font-bold text-[10px] mt-1">Remove</button>
-            </div>
-          </div>
-        `;
-      }).join("");
-      totalTxt.textContent = "$" + grandTotal.toFixed(2);
-    }
-
-    function toggleCartModal(forceOpen = false) {
-      const m = document.getElementById("cartModal");
-      if (forceOpen) m.classList.remove("hidden");
-      else m.classList.toggle("hidden");
-    }
-
-    async function checkoutOrder() {
-      if (cart.length === 0) return alert("Cart is empty!");
-      const store = document.getElementById("custStoreSelect").value;
-      const isUrgent = document.getElementById("urgentCheck").checked;
-      const notes = document.getElementById("cartNotes").value;
+      const btn = document.getElementById('submitOrderBtn');
+      btn.disabled = true;
+      btn.innerText = 'Submitting...';
 
       const payload = {
-        action: "placeOrder",
-        isUrgent: isUrgent,
-        notes: notes,
-        items: cart.map(c => ({
-          sku: c.sku,
-          device: c.device,
-          qty: c.qty,
-          unitPrice: c.unitPrice,
-          availableAlloc: c.allocation || 0,
-          storeLocation: store
-        }))
+        items: keys.map(k => cart[k]),
+        urgent: document.getElementById('urgentOrderCheck').checked,
+        notes: document.getElementById('orderNotesInput').value
       };
 
-      try {
-        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
-        const resJson = await res.json();
-        alert(`Order Placed: ${resJson.orderId}. Allocations booked and excess marked for Backorder.`);
-        cart = [];
-        updateCartDrawer();
-        toggleCartModal(false);
-        fetchData();
-      } catch (e) {
-        alert("Order submitted to sheet!");
-        cart = [];
-        toggleCartModal(false);
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.disabled = false;
+          btn.innerText = 'Confirm & Place Order';
+          if (res.success) {
+            alert('Order Placed Successfully! Ref: ' + res.orderId);
+            cart = {};
+            document.getElementById('cartCount').innerText = '0';
+            closeCartModal();
+            loadPortalData();
+            switchTab('orders');
+          } else {
+            alert('Error: ' + res.message);
+          }
+        })
+        .submitOrder(payload);
+    }
+
+    function renderOrders(orders) {
+      const tbody = document.getElementById('ordersTbody');
+      tbody.innerHTML = '';
+      orders.forEach(o => {
+        let actionBtn = '';
+        if (currentUser.role === 'admin' && String(o.status).toLowerCase().includes('pending')) {
+          actionBtn = `<button onclick="openIdooModal('${o.orderId}', ${o.total})" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded">Confirm IDOO</button>`;
+        }
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="py-3 px-4 font-mono text-xs font-semibold text-slate-700">${o.orderId}</td>
+            <td class="py-3 px-4 text-xs text-slate-500">${o.date}</td>
+            <td class="py-3 px-4 font-medium text-slate-800">${o.device}</td>
+            <td class="py-3 px-4 text-center font-bold">${o.pieces}</td>
+            <td class="py-3 px-4 text-right font-semibold text-slate-900">$${Number(o.total).toFixed(2)}</td>
+            <td class="py-3 px-4 text-center">${o.urgent === 'YES' ? '<span class="text-xs bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded">URGENT</span>' : '-'}</td>
+            <td class="py-3 px-4 text-center"><span class="text-xs font-semibold px-2 py-0.5 rounded ${String(o.status).includes('Executed') ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${o.status}</span></td>
+            ${currentUser.role === 'admin' ? `<td class="py-3 px-4 text-center">${actionBtn}</td>` : ''}
+          </tr>
+        `;
+      });
+    }
+
+    function renderLedger(entries) {
+      const tbody = document.getElementById('ledgerTbody');
+      tbody.innerHTML = '';
+      entries.forEach(e => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="py-3 px-4 font-mono text-xs text-slate-500">${e.id}</td>
+            <td class="py-3 px-4 text-xs text-slate-500">${e.date}</td>
+            <td class="py-3 px-4 font-medium">${e.type}</td>
+            <td class="py-3 px-4 font-mono text-xs text-blue-600 font-semibold">${e.ref}</td>
+            <td class="py-3 px-4 text-right text-red-600 font-medium">$${Number(e.debit).toFixed(2)}</td>
+            <td class="py-3 px-4 text-right text-emerald-600 font-medium">$${Number(e.credit).toFixed(2)}</td>
+            <td class="py-3 px-4 text-right font-bold text-slate-900">$${Number(e.balance).toFixed(2)}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function openIdooModal(orderId, confirmedVal) {
+      document.getElementById('modalOrderId').value = orderId;
+      document.getElementById('modalConfirmedVal').value = confirmedVal;
+      document.getElementById('modalIdooPo').value = '';
+      document.getElementById('modalAdminNotes').value = '';
+      document.getElementById('idooModal').classList.remove('hidden');
+    }
+
+    function closeIdooModal() {
+      document.getElementById('idooModal').classList.add('hidden');
+    }
+
+    function confirmIdooExecution() {
+      const id = document.getElementById('modalOrderId').value;
+      const po = document.getElementById('modalIdooPo').value.trim();
+      const val = document.getElementById('modalConfirmedVal').value;
+      const notes = document.getElementById('modalAdminNotes').value;
+
+      if (!po) return alert('Enter IDOO PO number');
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res.success) {
+            closeIdooModal();
+            loadOrdersAndLedger();
+            alert('Execution Saved & Ledger Updated.');
+          } else {
+            alert('Error: ' + res.message);
+          }
+        })
+        .executeIDOOOrder(id, po, val, notes);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-blue-600', 'bg-blue-50');
+        btn.classList.add('text-slate-600');
+      });
+
+      document.getElementById(tabId + 'Tab').classList.remove('hidden');
+      const activeBtn = document.getElementById('tabBtn-' + tabId);
+      activeBtn.classList.remove('text-slate-600');
+      activeBtn.classList.add('text-blue-600', 'bg-blue-50');
+    }
+
+    function drillDownKPI(type) {
+      if (type === 'velocity') {
+        const sorted = [...masterCatalog].sort((a,b) => b.sale7Day - a.sale7Day);
+        renderCatalog(sorted);
+        switchTab('catalog');
+      } else if (type === 'allocated') {
+        const allocatedOnly = masterCatalog.filter(i => i.allocated > 0);
+        renderCatalog(allocatedOnly);
+        switchTab('catalog');
+      } else if (type === 'marketStock') {
+        renderCatalog(masterCatalog);
+        switchTab('catalog');
       }
     }
 
-    // CUSTOMER ORDERS RENDER
-    function renderCustomerOrders() {
-      const b = document.getElementById("custOrdersBody");
-      b.innerHTML = ordersList.slice(1).reverse().map(r => `
-        <tr class="border-b hover:bg-slate-50">
-          <td class="p-3 font-mono font-bold text-indigo-600">${r[0]}</td>
-          <td class="p-3 text-slate-400">${r[1]}</td>
-          <td class="p-3 font-semibold">${r[2]}</td>
-          <td class="p-3">${r[5]}</td>
-          <td class="p-3 font-bold text-center">${r[6]}</td>
-          <td class="p-3">$${Number(r[7] || 0).toFixed(2)}</td>
-          <td class="p-3 font-bold text-slate-900">$${Number(r[8] || 0).toFixed(2)}</td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${r[9] === 'Placed in IDOO' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${r[9]}</span></td>
-          <td class="p-3 font-mono font-bold">${r[12] || '-'}</td>
-          <td class="p-3 font-bold text-emerald-700">${r[13] ? '$' + Number(r[13]).toFixed(2) : '-'}</td>
-        </tr>
-      `).join("");
+    function downloadCSV(csvContent, filename) {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
-    // ADMIN VIEW CONTROLS
-    function switchAdminTab(t) {
-      document.getElementById("adminTabStores").classList.toggle("hidden", t !== 'stores');
-      document.getElementById("adminTabOrders").classList.toggle("hidden", t !== 'orders');
-      document.getElementById("adminTabBackorders").classList.toggle("hidden", t !== 'backorders');
-      document.getElementById("tabStoresBtn").className = t === 'stores' ? "px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white transition" : "px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border transition";
-      document.getElementById("tabOrdersBtn").className = t === 'orders' ? "px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white transition" : "px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border transition";
-      document.getElementById("tabBackordersBtn").className = t === 'backorders' ? "px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white transition" : "px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border transition";
-    }
-
-    function renderStoreMatrix() {
-      const q = document.getElementById("storeMatrixSearch").value.toLowerCase();
-      const b = document.getElementById("storeMatrixBody");
-      const filtered = storeMatrix.filter(s => s.device.toLowerCase().includes(q) || s.sku.includes(q));
-
-      b.innerHTML = filtered.map(s => `
-        <tr class="border-b hover:bg-slate-50">
-          <td class="p-2.5 font-semibold text-slate-900">${s.device} <br><span class="text-[10px] text-slate-400 font-mono">${s.sku}</span></td>
-          <td class="p-2.5 text-center">${s.s2039}</td>
-          <td class="p-2.5 text-center">${s.s240}</td>
-          <td class="p-2.5 text-center">${s.s2559}</td>
-          <td class="p-2.5 text-center">${s.s2811}</td>
-          <td class="p-2.5 text-center">${s.s4900}</td>
-          <td class="p-2.5 text-center">${s.s7320}</td>
-          <td class="p-2.5 text-center font-bold bg-slate-100">${s.storeTotal}</td>
-          <td class="p-2.5 text-center font-bold bg-indigo-50 text-indigo-700">${s.hubTotal}</td>
-          <td class="p-2.5 text-center font-bold">${s.marketTotal}</td>
-          <td class="p-2.5 text-center font-bold text-rose-600">${s.velocity7d}</td>
-        </tr>
-      `).join("");
-    }
-
-    function renderAdminOrders() {
-      const b = document.getElementById("adminOrdersBody");
-      b.innerHTML = ordersList.slice(1).map(r => `
-        <tr class="border-b hover:bg-slate-50">
-          <td class="p-3 font-mono font-bold">${r[0]}</td>
-          <td class="p-3 text-slate-400">${r[1]}</td>
-          <td class="p-3">${r[2]}</td>
-          <td class="p-3 font-medium">${r[5]}</td>
-          <td class="p-3 font-bold text-center">${r[6]}</td>
-          <td class="p-3 font-bold text-indigo-700">$${r[8]}</td>
-          <td class="p-3">${r[10] === 'YES' ? '<span class="badge-urgent text-[10px] px-2 py-0.5 rounded font-bold">URGENT</span>' : '-'}</td>
-          <td class="p-3 font-semibold">${r[9]}</td>
-          <td class="p-3">
-            ${r[9] !== 'Placed in IDOO' ? `
-              <button onclick="adminMarkIdoo('${r[0]}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">Mark in IDOO</button>
-            ` : `<span class="text-xs text-emerald-700 font-bold">Done (${r[12]} -$${r[13]})</span>`}
-          </td>
-        </tr>
-      `).join("");
-    }
-
-    function renderAdminBackorders() {
-      const b = document.getElementById("adminBackordersBody");
-      b.innerHTML = backordersList.slice(1).map(r => `
-        <tr class="border-b hover:bg-slate-50">
-          <td class="p-3 font-mono font-bold">${r[0]}</td>
-          <td class="p-3 text-slate-400">${r[1]}</td>
-          <td class="p-3">${r[2]}</td>
-          <td class="p-3 font-medium">${r[4]}</td>
-          <td class="p-3 font-bold text-center text-amber-700">${r[5]} PCS</td>
-          <td class="p-3 text-center">${r[6]}</td>
-          <td class="p-3 text-slate-500">${r[7]}</td>
-          <td class="p-3 font-bold text-amber-600">${r[8]}</td>
-        </tr>
-      `).join("");
-    }
-
-    async function adminMarkIdoo(ordId) {
-      const ref = prompt(`Enter IDOO PO # for ${ordId}:`, "PO-WICH-1001");
-      if (!ref) return;
-      const val = prompt(`Enter Confirmed Order Value placed in IDOO ($ USD):`, "1500.00");
-      if (!val) return;
-
-      await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "markIdoo", orderId: ordId, idooRef: ref, idooVal: val })
+    function exportCatalogCSV() {
+      let csv = "SKU,Device,UnitPrice,Allocated,Recommended\n";
+      masterCatalog.forEach(i => {
+        csv += `"${i.sku}","${i.device.replace(/"/g, '""')}",${i.unitPrice},${i.allocated},${i.suggestedUnits}\n`;
       });
-      alert("Order successfully marked Placed in IDOO!");
-      fetchData();
+      downloadCSV(csv, "Wichita_Catalog.csv");
+    }
+
+    function exportOrdersCSV() {
+      let csv = "OrderID,Date,SKU,Device,Pieces,Total,Urgent,Status\n";
+      rawOrders.forEach(o => {
+        csv += `"${o.orderId}","${o.date}","${o.sku}","${o.device.replace(/"/g, '""')}",${o.pieces},${o.total},"${o.urgent}","${o.status}"\n`;
+      });
+      downloadCSV(csv, "Wichita_Orders.csv");
+    }
+
+    function exportLedgerCSV() {
+      let csv = "TxID,Date,Type,Reference,Debit,Credit,Balance\n";
+      rawLedger.forEach(l => {
+        csv += `"${l.id}","${l.date}","${l.type}","${l.ref}",${l.debit},${l.credit},${l.balance}\n`;
+      });
+      downloadCSV(csv, "Wichita_Ledger_Statement.csv");
     }
   </script>
 </body>
