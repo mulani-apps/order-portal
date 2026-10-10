@@ -3,366 +3,429 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>B2B Inventory & Order Portal</title>
+  <title>Wichita Market - B2B Order & Inventory Hub</title>
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    .badge-urgent { background-color: #fee2e2; color: #dc2626; border: 1px solid #f87171; }
+    .badge-urgent { background-color: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
 
-  <!-- GOOGLE APPS SCRIPT API CONFIG -->
+  <!-- GOOGLE APPS SCRIPT URL -->
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxbLwQVyKJMHFAxwMgwGD1waZCQBpQghWA0YpqldkOl1G0-8sULKQ8LeUf2JGkzz6m5oA/exec";
   </script>
 
   <!-- NAVBAR -->
-  <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+  <header class="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <i data-lucide="layers" class="w-7 h-7 text-indigo-400"></i>
-        <span class="text-xl font-bold tracking-tight">SupplyLink Portal</span>
+        <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white text-lg">W</div>
+        <div>
+          <span class="text-base font-bold tracking-tight block">Wichita Distribution Hub</span>
+          <span class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">6 Stores Network</span>
+        </div>
       </div>
-      <div class="flex items-center space-x-4">
-        <button id="viewCustomerBtn" onclick="switchView('customer')" class="px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-600 font-medium text-sm flex items-center space-x-1.5 transition">
-          <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-          <span>Customer Shop</span>
+
+      <div class="flex items-center space-x-3">
+        <span id="authBadge" class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 font-medium">Guest</span>
+        
+        <button id="cartBtn" onclick="toggleCartModal()" class="relative p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 transition hidden">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+          <span id="cartCountBadge" class="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span>
         </button>
-        <button id="viewAdminBtn" onclick="openAdminLoginModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 font-medium text-sm flex items-center space-x-1.5 border border-slate-700 transition">
-          <i data-lucide="shield" class="w-4 h-4 text-emerald-400"></i>
-          <span>Admin Portal</span>
-        </button>
-        <button onclick="toggleCartModal()" class="relative p-2 bg-indigo-800 hover:bg-indigo-700 rounded-lg transition">
-          <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-          <span id="cartCountBadge" class="absolute -top-1 -right-1 bg-rose-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold hidden">0</span>
+
+        <button id="logoutBtn" onclick="logout()" class="px-3 py-1.5 bg-rose-950/60 text-rose-300 hover:bg-rose-900 border border-rose-800/50 rounded-xl text-xs font-semibold transition hidden">
+          Logout
         </button>
       </div>
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
-  <main class="max-w-7xl mx-auto p-4 sm:p-6 flex-1 w-full">
+  <!-- ================= AUTH VIEW (LOGIN SCREEN) ================= -->
+  <div id="authScreen" class="flex-1 flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-3xl p-8 border border-slate-200 shadow-xl">
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="lock" class="w-6 h-6"></i>
+        </div>
+        <h2 class="text-xl font-bold text-slate-900">Sign in to Portal</h2>
+        <p class="text-xs text-slate-500 mt-1">Select your portal role to continue</p>
+      </div>
 
-    <!-- ================= CUSTOMER VIEW ================= -->
-    <section id="customerSection">
-      <!-- Banner / Announcement -->
-      <div class="bg-gradient-to-r from-blue-900 to-indigo-800 rounded-2xl p-6 text-white mb-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div class="flex p-1 bg-slate-100 rounded-2xl mb-6">
+        <button id="tabCustomerBtn" onclick="setAuthTab('customer')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-white shadow-sm text-indigo-600 transition">Customer (Dealer)</button>
+        <button id="tabAdminBtn" onclick="setAuthTab('admin')" class="flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition">Admin (Amirali)</button>
+      </div>
+
+      <div class="space-y-4">
         <div>
-          <h1 class="text-2xl font-bold">Available Allocations & Order Desk</h1>
-          <p class="text-blue-200 text-sm mt-1">Order directly from live allocation or submit custom allocation requests.</p>
+          <label class="text-xs font-semibold text-slate-600 block mb-1">User ID</label>
+          <input type="text" id="loginUser" value="WICHITA" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none" />
         </div>
-        <div class="flex gap-2">
-          <button onclick="loadSheetData()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-medium flex items-center space-x-2 backdrop-blur-sm transition">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-            <span>Refresh Stock</span>
-          </button>
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1">Password</label>
+          <input type="password" id="loginPass" value="123456" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+        <div id="loginError" class="text-xs text-rose-500 font-semibold hidden">Invalid ID or password.</div>
+        <button onclick="handleLogin()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm shadow-md transition">
+          Enter Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= APP CONTENT ================= -->
+  <main id="appContent" class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full hidden">
+
+    <!-- KPI STRIP -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Wichita Catalog SKUs</span>
+        <span id="kpiSkuCount" class="text-xl font-black text-slate-900 mt-1 block">--</span>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Live Allocated Units</span>
+        <span id="kpiAllocUnits" class="text-xl font-black text-emerald-600 mt-1 block">--</span>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">7-Day Sales Velocity</span>
+        <span id="kpiVelocity" class="text-xl font-black text-indigo-600 mt-1 block">--</span>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm" id="kpiFourthCard">
+        <span id="kpiFourthTitle" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Recent Orders</span>
+        <span id="kpiFourthValue" class="text-xl font-black text-slate-900 mt-1 block">--</span>
+      </div>
+    </div>
+
+    <!-- ================= CUSTOMER PORTAL ================= -->
+    <section id="customerPortal" class="hidden">
+      <!-- Search & Filters -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <input type="text" id="custSearch" oninput="renderCustomerCatalog()" placeholder="Search iPhone, Samsung, Motorola, etc..." class="px-4 py-2 bg-slate-50 border rounded-xl text-sm w-full sm:w-80 outline-none focus:ring-2 focus:ring-indigo-500" />
+          <select id="custStoreSelect" class="px-3 py-2 bg-slate-50 border rounded-xl text-sm font-semibold text-slate-700 outline-none">
+            <option value="WICHITA MARKET">All Wichita</option>
+            <option value="2039 21ST">2039 21ST</option>
+            <option value="240 WEST">240 WEST</option>
+            <option value="2559 W PAWNEE">2559 W PAWNEE</option>
+            <option value="2811 HYDRAULIC">2811 HYDRAULIC</option>
+            <option value="4900 E PAWNEE">4900 E PAWNEE</option>
+            <option value="7320 CENTRAL/RIDGE">7320 CENTRAL/RIDGE</option>
+          </select>
+        </div>
+        <div class="text-xs text-slate-500 font-medium">
+          Note: Prices are per <span class="font-bold text-slate-800">Piece (EA)</span>. Pack contains 20 pcs (iPhone) or 5 pcs.
         </div>
       </div>
 
-      <!-- PRODUCT CATALOG -->
-      <div class="mb-6 flex justify-between items-center flex-wrap gap-4">
-        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-          <i data-lucide="smartphone" class="w-5 h-5 text-indigo-600"></i>
-          Live Allocations Catalog
-        </h2>
-        <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search SKU or device name..." class="px-4 py-2 border rounded-xl w-72 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+      <!-- Catalog Grid -->
+      <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-10">
+        <!-- Injected via JS -->
       </div>
 
-      <!-- Products Grid -->
-      <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="col-span-full py-16 text-center text-slate-400">
-          <i data-lucide="loader" class="w-8 h-8 animate-spin mx-auto mb-2 text-indigo-500"></i>
-          Loading live allocation data from Google Sheet...
-        </div>
-      </div>
-
-      <!-- MY ORDERS SECTION -->
-      <div class="mt-12 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <i data-lucide="clock" class="w-5 h-5 text-indigo-600"></i>
-          My Recent Orders Status
-        </h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm text-left border-collapse">
+      <!-- Customer Orders Table -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <h3 class="font-bold text-base text-slate-900 mb-4 flex items-center gap-2">
+          <i data-lucide="package" class="w-4 h-4 text-indigo-600"></i>
+          My Orders & IDOO Execution Status
+        </h3>
+        <div class="overflow-x-auto custom-scroll">
+          <table class="w-full text-left text-xs border-collapse">
             <thead>
               <tr class="bg-slate-50 text-slate-500 border-b">
                 <th class="p-3 font-semibold">Order ID</th>
                 <th class="p-3 font-semibold">Date</th>
-                <th class="p-3 font-semibold">SKU / Device</th>
-                <th class="p-3 font-semibold text-center">Qty</th>
+                <th class="p-3 font-semibold">Store</th>
+                <th class="p-3 font-semibold">Device</th>
+                <th class="p-3 font-semibold text-center">PCS</th>
+                <th class="p-3 font-semibold">Unit Price</th>
+                <th class="p-3 font-semibold">Total</th>
                 <th class="p-3 font-semibold">Status</th>
-                <th class="p-3 font-semibold">Urgency</th>
-                <th class="p-3 font-semibold">IDOO Ref</th>
+                <th class="p-3 font-semibold">IDOO Ref / PO</th>
+                <th class="p-3 font-semibold">Confirmed Value ($)</th>
               </tr>
             </thead>
-            <tbody id="customerOrdersTable">
-              <tr>
-                <td colspan="7" class="p-4 text-center text-slate-400">No orders found yet.</td>
-              </tr>
-            </tbody>
+            <tbody id="custOrdersBody"></tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- ================= ADMIN VIEW ================= -->
-    <section id="adminSection" class="hidden">
-      <!-- Admin Header -->
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <i data-lucide="shield-check" class="w-7 h-7 text-emerald-600"></i>
-            Admin Management Console (Amirali)
-          </h1>
-          <p class="text-sm text-slate-500">Manage orders, update live allocations, and monitor credit ledger.</p>
-        </div>
-        <button onclick="adminLogout()" class="px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-sm font-semibold transition">
-          Log Out
-        </button>
+    <!-- ================= ADMIN PORTAL ================= -->
+    <section id="adminPortal" class="hidden">
+      <!-- Admin Sub Tabs -->
+      <div class="flex gap-2 mb-6 border-b border-slate-200 pb-3">
+        <button onclick="switchAdminTab('stores')" id="tabStoresBtn" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white transition">6 Stores Stock Breakdown</button>
+        <button onclick="switchAdminTab('orders')" id="tabOrdersBtn" class="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border transition">Orders Desk (IDOO)</button>
+        <button onclick="switchAdminTab('backorders')" id="tabBackordersBtn" class="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border transition">Requested Backorders</button>
       </div>
 
-      <!-- Top Stats: Credit & Counts -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div class="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Available Credit Balance</div>
-          <div id="adminCreditBalance" class="text-2xl font-black text-slate-900">$0.00</div>
-          <div class="mt-3 flex items-center gap-2">
-            <input type="number" id="newCreditInput" placeholder="New Limit ($)" class="px-2 py-1 border text-sm rounded w-32" />
-            <button onclick="submitNewCredit()" class="px-3 py-1 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700">Set Limit</button>
+      <!-- TAB 1: STORES BREAKDOWN -->
+      <div id="adminTabStores">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+            <div>
+              <h3 class="font-bold text-base text-slate-900">Wichita Store-Level Availability Matrix</h3>
+              <p class="text-xs text-slate-500">Real-time counts across retail branches, main hub, and 7-day velocity</p>
+            </div>
+            <input type="text" id="storeMatrixSearch" oninput="renderStoreMatrix()" placeholder="Filter store stock..." class="px-3 py-1.5 bg-slate-50 border rounded-xl text-xs w-60 outline-none" />
+          </div>
+          <div class="overflow-x-auto custom-scroll">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-600 border-b">
+                  <th class="p-2.5 font-bold">Device Name</th>
+                  <th class="p-2.5 font-semibold text-center">2039 21ST</th>
+                  <th class="p-2.5 font-semibold text-center">240 WEST</th>
+                  <th class="p-2.5 font-semibold text-center">2559 PAWNEE</th>
+                  <th class="p-2.5 font-semibold text-center">2811 HYDRAULIC</th>
+                  <th class="p-2.5 font-semibold text-center">4900 PAWNEE</th>
+                  <th class="p-2.5 font-semibold text-center">7320 CENTRAL</th>
+                  <th class="p-2.5 font-bold text-center bg-slate-100">Store Level</th>
+                  <th class="p-2.5 font-bold text-center bg-indigo-50 text-indigo-700">MAIN HUB</th>
+                  <th class="p-2.5 font-bold text-center">Market TTL</th>
+                  <th class="p-2.5 font-bold text-center text-rose-600">7D Sales</th>
+                </tr>
+              </thead>
+              <tbody id="storeMatrixBody"></tbody>
+            </table>
           </div>
         </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div class="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Pending Orders</div>
-          <div id="adminPendingCount" class="text-2xl font-black text-amber-600">0</div>
-          <p class="text-xs text-slate-400 mt-2">Requires placement in IDOO</p>
-        </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div class="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">Active SKUs in Live Allocation</div>
-          <div id="adminSkuCount" class="text-2xl font-black text-indigo-600">0</div>
-          <p class="text-xs text-slate-400 mt-2">Parsed from latest IDOO allocations</p>
+      </div>
+
+      <!-- TAB 2: ORDERS DESK -->
+      <div id="adminTabOrders" class="hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h3 class="font-bold text-base text-slate-900 mb-4">Pending Execution in IDOO Portal</h3>
+          <div class="overflow-x-auto custom-scroll">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-600 border-b">
+                  <th class="p-3 font-semibold">Order ID</th>
+                  <th class="p-3 font-semibold">Time</th>
+                  <th class="p-3 font-semibold">Store</th>
+                  <th class="p-3 font-semibold">Device</th>
+                  <th class="p-3 font-semibold text-center">PCS</th>
+                  <th class="p-3 font-semibold">Order Total</th>
+                  <th class="p-3 font-semibold">Urgency</th>
+                  <th class="p-3 font-semibold">Status</th>
+                  <th class="p-3 font-semibold">IDOO Action</th>
+                </tr>
+              </thead>
+              <tbody id="adminOrdersBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- ALLOCATION UPDATE BOX (SCREENSHOT / PASTE INPUT) -->
-      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mb-8">
-        <h2 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
-          <i data-lucide="image" class="w-5 h-5 text-indigo-600"></i>
-          Update Allocation from IDOO Screenshot
-        </h2>
-        <p class="text-sm text-slate-500 mb-4">
-          Jab aap IDOO screenshot se data paste karein ya nayi allocation JSON paste karein, sheet ka <b>Allocation_Live</b> tab auto update ho jayega.
-        </p>
-
-        <div class="flex flex-col md:flex-row gap-4 items-start">
-          <textarea id="allocationJsonInput" rows="3" placeholder='Paste Parsed Allocations JSON: [{"sku":"610214685872","device":"SAM A166U","price":835,"allocation":11}]' class="w-full text-xs font-mono p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 bg-slate-50"></textarea>
-          <button onclick="syncAllocationsToSheet()" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl text-sm shrink-0 flex items-center gap-2 shadow-sm transition">
-            <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-            <span>Update Allocation Live</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- ORDER EXECUTION DESK (PLACE IN IDOO) -->
-      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <i data-lucide="check-square" class="w-5 h-5 text-indigo-600"></i>
-          Orders Execution Desk (Mark Placed in IDOO)
-        </h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm text-left border-collapse">
-            <thead>
-              <tr class="bg-slate-50 text-slate-500 border-b">
-                <th class="p-3 font-semibold">Order ID</th>
-                <th class="p-3 font-semibold">Time</th>
-                <th class="p-3 font-semibold">SKU / Device</th>
-                <th class="p-3 font-semibold">Qty</th>
-                <th class="p-3 font-semibold">Total ($)</th>
-                <th class="p-3 font-semibold">Urgent</th>
-                <th class="p-3 font-semibold">Customer Notes</th>
-                <th class="p-3 font-semibold">Status</th>
-                <th class="p-3 font-semibold">Action</th>
-              </tr>
-            </thead>
-            <tbody id="adminOrdersTable">
-              <tr>
-                <td colspan="9" class="p-4 text-center text-slate-400">Loading orders...</td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- TAB 3: BACKORDERS -->
+      <div id="adminTabBackorders" class="hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h3 class="font-bold text-base text-slate-900 mb-4">Demand for Unallocated Stock (Requested Allocations)</h3>
+          <div class="overflow-x-auto custom-scroll">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-600 border-b">
+                  <th class="p-3 font-semibold">Req ID</th>
+                  <th class="p-3 font-semibold">Date</th>
+                  <th class="p-3 font-semibold">Store</th>
+                  <th class="p-3 font-semibold">Device</th>
+                  <th class="p-3 font-semibold text-center">Requested PCS</th>
+                  <th class="p-3 font-semibold">Available at Time</th>
+                  <th class="p-3 font-semibold">Notes</th>
+                  <th class="p-3 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody id="adminBackordersBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- CART MODAL -->
+  <!-- CART DRAWER -->
   <div id="cartModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-end hidden">
-    <div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-6 animate-slide-left">
+    <div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-6">
       <div class="flex justify-between items-center pb-4 border-b">
-        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <i data-lucide="shopping-cart" class="w-5 h-5 text-indigo-600"></i>
-          Your Order Cart
-        </h3>
-        <button onclick="toggleCartModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+        <h3 class="text-base font-bold text-slate-900">Your Order Cart (In Pieces)</h3>
+        <button onclick="toggleCartModal()"><i data-lucide="x" class="w-5 h-5 text-slate-400"></i></button>
       </div>
 
-      <div id="cartItemList" class="flex-1 overflow-y-auto py-4 space-y-4">
-        <div class="text-center text-slate-400 py-10">Cart is empty.</div>
-      </div>
+      <div id="cartItemsList" class="flex-1 overflow-y-auto py-4 space-y-3 custom-scroll"></div>
 
-      <!-- Checkout Options -->
       <div class="pt-4 border-t space-y-3">
-        <!-- Urgent Toggle -->
         <label class="flex items-center space-x-3 p-3 rounded-xl border border-rose-200 bg-rose-50/50 cursor-pointer">
-          <input type="checkbox" id="urgentCheckbox" class="w-4 h-4 text-rose-600 rounded focus:ring-rose-500 border-slate-300" />
-          <span class="text-sm font-semibold text-rose-700 flex items-center gap-1">
-            <i data-lucide="alert-circle" class="w-4 h-4"></i> Mark as URGENT Dispatch
-          </span>
+          <input type="checkbox" id="urgentCheck" class="w-4 h-4 text-rose-600 rounded" />
+          <span class="text-xs font-bold text-rose-700">Urgent Wichita Dispatch</span>
         </label>
 
-        <!-- Comments -->
-        <div>
-          <label class="text-xs font-semibold text-slate-600 block mb-1">Customer Comments / Special Instructions</label>
-          <textarea id="cartNotes" rows="2" placeholder="e.g., Deliver to Pawnee branch first..." class="w-full text-xs p-2.5 border rounded-xl focus:ring-2 focus:ring-indigo-500 bg-slate-50"></textarea>
+        <textarea id="cartNotes" rows="2" placeholder="Optional notes for distribution team..." class="w-full text-xs p-2.5 border rounded-xl bg-slate-50 outline-none"></textarea>
+
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-slate-500 font-medium">Estimated Total:</span>
+          <span id="cartTotalPrice" class="font-black text-slate-900 text-lg">$0.00</span>
         </div>
 
-        <div class="flex justify-between items-center pt-2">
-          <span class="text-sm text-slate-500 font-medium">Total Amount:</span>
-          <span id="cartTotalText" class="text-xl font-black text-slate-900">$0.00</span>
-        </div>
-
-        <button onclick="submitOrder()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition">
-          Submit Order to Sheet
+        <button onclick="checkoutOrder()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition">
+          Confirm Order
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ADMIN LOGIN MODAL -->
-  <div id="adminLoginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
-      <h3 class="text-lg font-bold text-slate-800 mb-1">Admin Authorization</h3>
-      <p class="text-xs text-slate-500 mb-4">Enter credentials to access Admin Console.</p>
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs font-semibold text-slate-600">Username</label>
-          <input type="text" id="adminUserInput" value="Amirali" class="w-full px-3 py-2 border rounded-xl text-sm mt-1 focus:ring-2 focus:ring-indigo-500" />
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-slate-600">Password</label>
-          <input type="password" id="adminPassInput" placeholder="••••••••" class="w-full px-3 py-2 border rounded-xl text-sm mt-1 focus:ring-2 focus:ring-indigo-500" />
-        </div>
-        <div id="loginError" class="text-rose-500 text-xs hidden">Invalid username or password.</div>
-        <div class="flex gap-2 pt-2">
-          <button onclick="closeAdminLoginModal()" class="w-1/2 py-2 border rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
-          <button onclick="verifyAdminLogin()" class="w-1/2 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold">Login</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- JAVASCRIPT LOGIC -->
   <script>
-    // State Store
+    // System State
+    let authRole = null;
     let catalog = [];
+    let storeMatrix = [];
+    let ordersList = [];
+    let backordersList = [];
+    let creditList = [];
     let cart = [];
-    let ordersData = [];
-    let salesMap = {};
-    let isAdminLoggedIn = false;
 
-    // INITIAL LOAD
     window.onload = () => {
       lucide.createIcons();
-      loadSheetData();
     };
 
-    // 1. FETCH DATA FROM GOOGLE APPS SCRIPT
-    async function loadSheetData() {
+    function setAuthTab(role) {
+      const isCust = role === 'customer';
+      document.getElementById("tabCustomerBtn").className = isCust ? "flex-1 py-2 text-xs font-bold rounded-xl bg-white shadow-sm text-indigo-600 transition" : "flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition";
+      document.getElementById("tabAdminBtn").className = !isCust ? "flex-1 py-2 text-xs font-bold rounded-xl bg-white shadow-sm text-indigo-600 transition" : "flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition";
+      document.getElementById("loginUser").value = isCust ? "WICHITA" : "Amirali";
+      document.getElementById("loginPass").value = isCust ? "123456" : "2956838rR";
+    }
+
+    function handleLogin() {
+      const u = document.getElementById("loginUser").value.trim();
+      const p = document.getElementById("loginPass").value.trim();
+
+      if (u === "WICHITA" && p === "123456") {
+        authRole = "customer";
+      } else if (u === "Amirali" && p === "2956838rR") {
+        authRole = "admin";
+      } else {
+        document.getElementById("loginError").classList.remove("hidden");
+        return;
+      }
+
+      document.getElementById("loginError").classList.add("hidden");
+      document.getElementById("authScreen").classList.add("hidden");
+      document.getElementById("appContent").classList.remove("hidden");
+      document.getElementById("logoutBtn").classList.remove("hidden");
+      document.getElementById("authBadge").textContent = authRole === 'admin' ? "Admin (Amirali)" : "Customer (Wichita)";
+
+      if (authRole === 'customer') {
+        document.getElementById("customerPortal").classList.remove("hidden");
+        document.getElementById("cartBtn").classList.remove("hidden");
+      } else {
+        document.getElementById("adminPortal").classList.remove("hidden");
+        document.getElementById("kpiFourthTitle").textContent = "Available Credit";
+      }
+
+      fetchData();
+    }
+
+    function logout() {
+      authRole = null;
+      document.getElementById("authScreen").classList.remove("hidden");
+      document.getElementById("appContent").classList.add("hidden");
+      document.getElementById("logoutBtn").classList.add("hidden");
+      document.getElementById("cartBtn").classList.add("hidden");
+      document.getElementById("customerPortal").classList.add("hidden");
+      document.getElementById("adminPortal").classList.add("hidden");
+    }
+
+    async function fetchData() {
       try {
         const res = await fetch(`${API_URL}?action=getData`);
-        const json = await res.json();
-        if (json.status === "success") {
-          parseAllocations(json.allocations);
-          salesMap = json.sales7d || {};
-          ordersData = json.orders || [];
-          renderProducts();
-          renderCustomerOrders();
-          if (isAdminLoggedIn) {
-            renderAdminView(json.credit);
+        const data = await res.json();
+        if (data.status === "success") {
+          catalog = data.catalog || [];
+          storeMatrix = data.storeInventory || [];
+          ordersList = data.orders || [];
+          backordersList = data.requests || [];
+          creditList = data.credit || [];
+
+          updateKPIs();
+          if (authRole === 'customer') {
+            renderCustomerCatalog();
+            renderCustomerOrders();
+          } else {
+            renderStoreMatrix();
+            renderAdminOrders();
+            renderAdminBackorders();
           }
         }
       } catch (err) {
-        console.error("Data fetch error:", err);
+        console.error("Fetch failed", err);
       }
     }
 
-    function parseAllocations(rows) {
-      if (!rows || rows.length <= 1) return;
-      catalog = [];
-      for (let i = 1; i < rows.length; i++) {
-        const [sku, device, price, alloc] = rows[i];
-        if (sku) {
-          catalog.push({
-            sku: String(sku),
-            device: String(device || "Unknown Item"),
-            price: Number(price || 0),
-            allocation: Number(alloc || 0)
-          });
+    function updateKPIs() {
+      document.getElementById("kpiSkuCount").textContent = catalog.length;
+      const totalAlloc = catalog.reduce((s, i) => s + (i.allocation || 0), 0);
+      document.getElementById("kpiAllocUnits").textContent = totalAlloc + " PCS";
+
+      const totalVel = storeMatrix.reduce((s, i) => s + (i.velocity7d || 0), 0);
+      document.getElementById("kpiVelocity").textContent = totalVel + " Sold";
+
+      if (authRole === 'customer') {
+        document.getElementById("kpiFourthValue").textContent = Math.max(0, ordersList.length - 1);
+      } else {
+        if (creditList.length > 1) {
+          const bal = creditList[creditList.length - 1][4] || 0;
+          document.getElementById("kpiFourthValue").textContent = "$" + Number(bal).toLocaleString();
+        } else {
+          document.getElementById("kpiFourthValue").textContent = "$0.00";
         }
       }
     }
 
-    // 2. RENDER PRODUCT CATALOG
-    function renderProducts(itemsToRender = catalog) {
-      const grid = document.getElementById("productGrid");
-      if (itemsToRender.length === 0) {
-        grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400">No products found.</div>`;
-        return;
-      }
+    // CUSTOMER CATALOG
+    function renderCustomerCatalog() {
+      const q = document.getElementById("custSearch").value.toLowerCase();
+      const grid = document.getElementById("catalogGrid");
+      const filtered = catalog.filter(c => c.device.toLowerCase().includes(q) || c.sku.includes(q));
 
-      grid.innerHTML = itemsToRender.map(item => {
-        const velocity = salesMap[item.sku] || 0;
-        // SMART SUGGESTION: 7-day velocity based recommendation
-        const recommendedQty = Math.max(1, Math.min(item.allocation, Math.ceil(velocity * 1.5)));
+      grid.innerHTML = filtered.map(item => {
+        const alloc = item.allocation || 0;
+        const vel = item.velocity7d || 0;
+        const recUnits = Math.max(1, Math.ceil(vel * 1.5));
 
         return `
-          <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between p-5">
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col justify-between hover:shadow-sm transition">
             <div>
               <div class="flex justify-between items-start mb-2">
-                <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold">${item.sku}</span>
-                <span class="text-xs px-2.5 py-1 rounded-full font-bold ${item.allocation > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'}">
-                  ${item.allocation > 0 ? `Allocation: ${item.allocation} EA` : 'No Allocation'}
+                <span class="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold">${item.sku}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${alloc > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
+                  ${alloc > 0 ? alloc + ' PCS Allocated' : 'Backorder Only'}
                 </span>
               </div>
-              <h3 class="font-bold text-slate-900 text-base leading-snug mb-2">${item.device}</h3>
-              <div class="text-lg font-black text-indigo-700 mb-3">$${item.price.toFixed(2)} USD</div>
+              <h4 class="font-bold text-slate-900 text-sm mb-1 leading-snug">${item.device}</h4>
+              <div class="flex items-baseline gap-2 mb-3">
+                <span class="text-base font-black text-indigo-700">$${item.unitPrice.toFixed(2)}</span>
+                <span class="text-[10px] text-slate-400 font-medium">per PC (Pack of ${item.packSize})</span>
+              </div>
 
-              <!-- SMART SUGGESTION BOX -->
-              <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-2.5 mb-4 text-xs text-indigo-900 flex items-start gap-2">
-                <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600 shrink-0 mt-0.5"></i>
-                <div>
-                  <div class="font-bold">Smart Suggestion: ${recommendedQty} Units</div>
-                  <div class="text-[11px] text-indigo-700">Based on 7-Day sales velocity (${velocity} sold).</div>
-                </div>
+              <!-- Recommendation -->
+              <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-2 mb-3 text-[11px] text-indigo-900 flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-600 shrink-0"></i>
+                <span>Suggested: <b>${recUnits} PCS</b> (7D Velocity: ${vel})</span>
               </div>
             </div>
 
-            <!-- ACTION BUTTONS -->
-            <div class="pt-3 border-t border-slate-100">
-              ${item.allocation > 0 ? `
-                <div class="flex items-center gap-2">
-                  <input type="number" id="qty-${item.sku}" value="${recommendedQty}" min="1" max="${item.allocation}" class="w-20 px-2 py-2 border rounded-xl text-center text-sm font-semibold" />
-                  <button onclick="addToCart('${item.sku}')" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 shadow-sm transition">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Add to Order
-                  </button>
-                </div>
-              ` : `
-                <button onclick="requestMoreAllocation('${item.sku}', '${encodeURIComponent(item.device)}')" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold shadow-sm transition">
-                  Request More Allocation
-                </button>
-              `}
+            <div class="pt-2 border-t flex items-center gap-2">
+              <input type="number" id="qty-${item.sku}" value="${Math.min(recUnits, alloc > 0 ? alloc : 5)}" min="1" class="w-16 px-2 py-1.5 border rounded-xl text-center text-xs font-bold" />
+              <button onclick="addToCart('${item.sku}')" class="flex-1 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition">
+                Add to Cart
+              </button>
             </div>
           </div>
         `;
@@ -370,255 +433,187 @@
       lucide.createIcons();
     }
 
-    function filterProducts() {
-      const q = document.getElementById("searchInput").value.toLowerCase();
-      const filtered = catalog.filter(p => p.sku.toLowerCase().includes(q) || p.device.toLowerCase().includes(q));
-      renderProducts(filtered);
-    }
-
-    // 3. CART OPERATIONS
     function addToCart(sku) {
-      const product = catalog.find(p => p.sku === sku);
+      const item = catalog.find(c => c.sku === sku);
       const qty = parseInt(document.getElementById(`qty-${sku}`).value) || 1;
-      const existing = cart.find(c => c.sku === sku);
-      if (existing) {
-        existing.qty += qty;
-      } else {
-        cart.push({ ...product, qty });
-      }
-      updateCartUI();
+      const exist = cart.find(c => c.sku === sku);
+      if (exist) exist.qty += qty;
+      else cart.push({ ...item, qty });
+      updateCartDrawer();
       toggleCartModal(true);
     }
 
-    function updateCartUI() {
+    function updateCartDrawer() {
       const badge = document.getElementById("cartCountBadge");
-      const list = document.getElementById("cartItemList");
-      const totalText = document.getElementById("cartTotalText");
+      const list = document.getElementById("cartItemsList");
+      const totalTxt = document.getElementById("cartTotalPrice");
 
-      const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
-      badge.textContent = totalItems;
-      badge.classList.toggle("hidden", totalItems === 0);
-
-      if (cart.length === 0) {
-        list.innerHTML = `<div class="text-center text-slate-400 py-10">Cart is empty.</div>`;
-        totalText.textContent = "$0.00";
-        return;
-      }
+      const count = cart.reduce((s, i) => s + i.qty, 0);
+      badge.textContent = count;
 
       let grandTotal = 0;
-      list.innerHTML = cart.map((item, index) => {
-        const itemTotal = item.qty * item.price;
-        grandTotal += itemTotal;
+      list.innerHTML = cart.map((i, idx) => {
+        const itemTot = i.qty * i.unitPrice;
+        grandTotal += itemTot;
+        const isBackorder = i.qty > (i.allocation || 0);
         return `
-          <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <div class="p-3 bg-slate-50 border rounded-xl flex justify-between items-center text-xs">
             <div>
-              <div class="font-bold text-sm text-slate-900">${item.device}</div>
-              <div class="text-xs text-slate-500">${item.qty} × $${item.price.toFixed(2)}</div>
+              <div class="font-bold text-slate-900">${i.device}</div>
+              <div class="text-[11px] text-slate-500">${i.qty} PCS × $${i.unitPrice.toFixed(2)}</div>
+              ${isBackorder ? `<span class="text-[10px] text-amber-700 font-bold block mt-0.5">⚠️ ${i.qty - (i.allocation || 0)} PCS will route to Backorder</span>` : ''}
             </div>
-            <div class="text-right flex items-center gap-3">
-              <span class="font-bold text-sm text-indigo-700">$${itemTotal.toFixed(2)}</span>
-              <button onclick="removeFromCart(${index})" class="text-rose-500 hover:text-rose-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <div class="text-right">
+              <span class="font-bold text-indigo-700 block">$${itemTot.toFixed(2)}</span>
+              <button onclick="cart.splice(${idx},1);updateCartDrawer();" class="text-rose-500 font-bold text-[10px] mt-1">Remove</button>
             </div>
           </div>
         `;
       }).join("");
-      totalText.textContent = `$${grandTotal.toFixed(2)}`;
-      lucide.createIcons();
-    }
-
-    function removeFromCart(index) {
-      cart.splice(index, 1);
-      updateCartUI();
+      totalTxt.textContent = "$" + grandTotal.toFixed(2);
     }
 
     function toggleCartModal(forceOpen = false) {
-      const modal = document.getElementById("cartModal");
-      if (forceOpen) modal.classList.remove("hidden");
-      else modal.classList.toggle("hidden");
+      const m = document.getElementById("cartModal");
+      if (forceOpen) m.classList.remove("hidden");
+      else m.classList.toggle("hidden");
     }
 
-    // 4. SUBMIT ORDER
-    async function submitOrder() {
+    async function checkoutOrder() {
       if (cart.length === 0) return alert("Cart is empty!");
-      const isUrgent = document.getElementById("urgentCheckbox").checked;
+      const store = document.getElementById("custStoreSelect").value;
+      const isUrgent = document.getElementById("urgentCheck").checked;
       const notes = document.getElementById("cartNotes").value;
 
       const payload = {
         action: "placeOrder",
-        orders: cart.map(c => ({
+        isUrgent: isUrgent,
+        notes: notes,
+        items: cart.map(c => ({
           sku: c.sku,
           device: c.device,
           qty: c.qty,
-          price: c.price,
-          isUrgent: isUrgent,
-          notes: notes
+          unitPrice: c.unitPrice,
+          availableAlloc: c.allocation || 0,
+          storeLocation: store
         }))
       };
 
       try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
-        const resData = await res.json();
-        if (resData.status === "success") {
-          alert(`Order Placed Successfully! (ID: ${resData.orderId})`);
-          cart = [];
-          updateCartUI();
-          toggleCartModal(false);
-          loadSheetData();
-        }
-      } catch (err) {
+        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const resJson = await res.json();
+        alert(`Order Placed: ${resJson.orderId}. Allocations booked and excess marked for Backorder.`);
+        cart = [];
+        updateCartDrawer();
+        toggleCartModal(false);
+        fetchData();
+      } catch (e) {
         alert("Order submitted to sheet!");
         cart = [];
-        updateCartUI();
         toggleCartModal(false);
       }
     }
 
-    // 5. REQUEST MORE ALLOCATION
-    async function requestMoreAllocation(sku, deviceEncoded) {
-      const device = decodeURIComponent(deviceEncoded);
-      const qty = prompt(`How many units of ${device} do you want to request?`, "5");
-      if (!qty) return;
-      const notes = prompt("Any notes/reason for extra allocation?", "Urgent customer demand");
-
-      try {
-        await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "requestAllocation", sku, device, qty, notes })
-        });
-        alert("Allocation Request recorded in sheet!");
-      } catch (e) {
-        alert("Request sent!");
-      }
-    }
-
-    // 6. RENDER CUSTOMER ORDERS
+    // CUSTOMER ORDERS RENDER
     function renderCustomerOrders() {
-      const tbody = document.getElementById("customerOrdersTable");
-      if (!ordersData || ordersData.length <= 1) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">No orders placed yet.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = ordersData.slice(1).reverse().map(row => {
-        const [ordId, date, cust, sku, device, qty, price, total, status, urgent, notes, idooRef] = row;
-        return `
-          <tr class="border-b hover:bg-slate-50 transition">
-            <td class="p-3 font-mono font-bold text-indigo-700">${ordId}</td>
-            <td class="p-3 text-slate-500 text-xs">${date}</td>
-            <td class="p-3 font-semibold text-slate-900">${device} <br><span class="text-xs text-slate-400 font-mono">${sku}</span></td>
-            <td class="p-3 font-bold text-center">${qty}</td>
-            <td class="p-3"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${status === 'Placed in IDOO' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${status}</span></td>
-            <td class="p-3">${urgent === 'YES' ? '<span class="badge-urgent text-xs px-2 py-0.5 rounded font-bold">URGENT</span>' : '-'}</td>
-            <td class="p-3 font-mono text-xs text-slate-700 font-semibold">${idooRef || 'Pending IDOO'}</td>
-          </tr>
-        `;
-      }).join("");
+      const b = document.getElementById("custOrdersBody");
+      b.innerHTML = ordersList.slice(1).reverse().map(r => `
+        <tr class="border-b hover:bg-slate-50">
+          <td class="p-3 font-mono font-bold text-indigo-600">${r[0]}</td>
+          <td class="p-3 text-slate-400">${r[1]}</td>
+          <td class="p-3 font-semibold">${r[2]}</td>
+          <td class="p-3">${r[5]}</td>
+          <td class="p-3 font-bold text-center">${r[6]}</td>
+          <td class="p-3">$${Number(r[7] || 0).toFixed(2)}</td>
+          <td class="p-3 font-bold text-slate-900">$${Number(r[8] || 0).toFixed(2)}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${r[9] === 'Placed in IDOO' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${r[9]}</span></td>
+          <td class="p-3 font-mono font-bold">${r[12] || '-'}</td>
+          <td class="p-3 font-bold text-emerald-700">${r[13] ? '$' + Number(r[13]).toFixed(2) : '-'}</td>
+        </tr>
+      `).join("");
     }
 
-    // 7. ADMIN CONTROLS
-    function openAdminLoginModal() {
-      if (isAdminLoggedIn) switchView('admin');
-      else document.getElementById("adminLoginModal").classList.remove("hidden");
-    }
-    function closeAdminLoginModal() {
-      document.getElementById("adminLoginModal").classList.add("hidden");
-    }
-    function verifyAdminLogin() {
-      const u = document.getElementById("adminUserInput").value.trim();
-      const p = document.getElementById("adminPassInput").value.trim();
-      if (u === "Amirali" && p === "2956838rR") {
-        isAdminLoggedIn = true;
-        closeAdminLoginModal();
-        switchView('admin');
-        loadSheetData();
-      } else {
-        document.getElementById("loginError").classList.remove("hidden");
-      }
-    }
-    function adminLogout() {
-      isAdminLoggedIn = false;
-      switchView('customer');
-    }
-    function switchView(view) {
-      if (view === 'admin' && !isAdminLoggedIn) return openAdminLoginModal();
-      document.getElementById("customerSection").classList.toggle("hidden", view !== 'customer');
-      document.getElementById("adminSection").classList.toggle("hidden", view !== 'admin');
+    // ADMIN VIEW CONTROLS
+    function switchAdminTab(t) {
+      document.getElementById("adminTabStores").classList.toggle("hidden", t !== 'stores');
+      document.getElementById("adminTabOrders").classList.toggle("hidden", t !== 'orders');
+      document.getElementById("adminTabBackorders").classList.toggle("hidden", t !== 'backorders');
+      document.getElementById("tabStoresBtn").className = t === 'stores' ? "px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white transition" : "px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border transition";
+      document.getElementById("tabOrdersBtn").className = t === 'orders' ? "px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white transition" : "px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border transition";
+      document.getElementById("tabBackordersBtn").className = t === 'backorders' ? "px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white transition" : "px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 hover:bg-slate-100 border transition";
     }
 
-    function renderAdminView(creditRows) {
-      document.getElementById("adminSkuCount").textContent = catalog.length;
-      const pendingCount = ordersData.slice(1).filter(r => r[8] !== 'Placed in IDOO').length;
-      document.getElementById("adminPendingCount").textContent = pendingCount;
+    function renderStoreMatrix() {
+      const q = document.getElementById("storeMatrixSearch").value.toLowerCase();
+      const b = document.getElementById("storeMatrixBody");
+      const filtered = storeMatrix.filter(s => s.device.toLowerCase().includes(q) || s.sku.includes(q));
 
-      if (creditRows && creditRows.length > 1) {
-        const lastRow = creditRows[creditRows.length - 1];
-        document.getElementById("adminCreditBalance").textContent = `$${Number(lastRow[3] || 0).toLocaleString()}`;
-      }
-
-      // Render Admin Execution Desk
-      const tbody = document.getElementById("adminOrdersTable");
-      tbody.innerHTML = ordersData.slice(1).map(row => {
-        const [ordId, date, cust, sku, device, qty, price, total, status, urgent, notes, idooRef] = row;
-        return `
-          <tr class="border-b hover:bg-slate-50">
-            <td class="p-3 font-mono font-bold">${ordId}</td>
-            <td class="p-3 text-xs text-slate-500">${date}</td>
-            <td class="p-3 font-medium">${device}</td>
-            <td class="p-3 font-bold">${qty}</td>
-            <td class="p-3 font-bold text-indigo-700">$${total}</td>
-            <td class="p-3">${urgent === 'YES' ? '<span class="badge-urgent text-xs px-2 py-0.5 rounded font-bold">URGENT</span>' : '-'}</td>
-            <td class="p-3 text-xs text-slate-600">${notes || '-'}</td>
-            <td class="p-3 font-semibold text-xs">${status}</td>
-            <td class="p-3">
-              ${status !== 'Placed in IDOO' ? `
-                <button onclick="markOrderPlacedInIdoo('${ordId}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">
-                  Mark Placed in IDOO
-                </button>
-              ` : `<span class="text-emerald-600 font-bold text-xs">Executed (${idooRef})</span>`}
-            </td>
-          </tr>
-        `;
-      }).join("");
+      b.innerHTML = filtered.map(s => `
+        <tr class="border-b hover:bg-slate-50">
+          <td class="p-2.5 font-semibold text-slate-900">${s.device} <br><span class="text-[10px] text-slate-400 font-mono">${s.sku}</span></td>
+          <td class="p-2.5 text-center">${s.s2039}</td>
+          <td class="p-2.5 text-center">${s.s240}</td>
+          <td class="p-2.5 text-center">${s.s2559}</td>
+          <td class="p-2.5 text-center">${s.s2811}</td>
+          <td class="p-2.5 text-center">${s.s4900}</td>
+          <td class="p-2.5 text-center">${s.s7320}</td>
+          <td class="p-2.5 text-center font-bold bg-slate-100">${s.storeTotal}</td>
+          <td class="p-2.5 text-center font-bold bg-indigo-50 text-indigo-700">${s.hubTotal}</td>
+          <td class="p-2.5 text-center font-bold">${s.marketTotal}</td>
+          <td class="p-2.5 text-center font-bold text-rose-600">${s.velocity7d}</td>
+        </tr>
+      `).join("");
     }
 
-    async function markOrderPlacedInIdoo(ordId) {
-      const ref = prompt(`Enter IDOO PO / Reference Number for ${ordId}:`, "PO-IDOO-9912");
+    function renderAdminOrders() {
+      const b = document.getElementById("adminOrdersBody");
+      b.innerHTML = ordersList.slice(1).map(r => `
+        <tr class="border-b hover:bg-slate-50">
+          <td class="p-3 font-mono font-bold">${r[0]}</td>
+          <td class="p-3 text-slate-400">${r[1]}</td>
+          <td class="p-3">${r[2]}</td>
+          <td class="p-3 font-medium">${r[5]}</td>
+          <td class="p-3 font-bold text-center">${r[6]}</td>
+          <td class="p-3 font-bold text-indigo-700">$${r[8]}</td>
+          <td class="p-3">${r[10] === 'YES' ? '<span class="badge-urgent text-[10px] px-2 py-0.5 rounded font-bold">URGENT</span>' : '-'}</td>
+          <td class="p-3 font-semibold">${r[9]}</td>
+          <td class="p-3">
+            ${r[9] !== 'Placed in IDOO' ? `
+              <button onclick="adminMarkIdoo('${r[0]}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">Mark in IDOO</button>
+            ` : `<span class="text-xs text-emerald-700 font-bold">Done (${r[12]} -$${r[13]})</span>`}
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function renderAdminBackorders() {
+      const b = document.getElementById("adminBackordersBody");
+      b.innerHTML = backordersList.slice(1).map(r => `
+        <tr class="border-b hover:bg-slate-50">
+          <td class="p-3 font-mono font-bold">${r[0]}</td>
+          <td class="p-3 text-slate-400">${r[1]}</td>
+          <td class="p-3">${r[2]}</td>
+          <td class="p-3 font-medium">${r[4]}</td>
+          <td class="p-3 font-bold text-center text-amber-700">${r[5]} PCS</td>
+          <td class="p-3 text-center">${r[6]}</td>
+          <td class="p-3 text-slate-500">${r[7]}</td>
+          <td class="p-3 font-bold text-amber-600">${r[8]}</td>
+        </tr>
+      `).join("");
+    }
+
+    async function adminMarkIdoo(ordId) {
+      const ref = prompt(`Enter IDOO PO # for ${ordId}:`, "PO-WICH-1001");
       if (!ref) return;
+      const val = prompt(`Enter Confirmed Order Value placed in IDOO ($ USD):`, "1500.00");
+      if (!val) return;
+
       await fetch(API_URL, {
         method: "POST",
-        body: JSON.stringify({ action: "markIdoo", orderId: ordId, idooRef: ref })
+        body: JSON.stringify({ action: "markIdoo", orderId: ordId, idooRef: ref, idooVal: val })
       });
-      alert("Order marked Placed in IDOO!");
-      loadSheetData();
-    }
-
-    async function submitNewCredit() {
-      const limit = document.getElementById("newCreditInput").value;
-      if (!limit) return;
-      await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "updateCredit", limit: limit })
-      });
-      alert("Credit limit updated in Google Sheet!");
-      loadSheetData();
-    }
-
-    async function syncAllocationsToSheet() {
-      const raw = document.getElementById("allocationJsonInput").value;
-      try {
-        const items = JSON.parse(raw);
-        await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "updateAllocations", items: items })
-        });
-        alert("Live Allocations Sheet updated successfully!");
-        loadSheetData();
-      } catch (e) {
-        alert("Invalid JSON format. Please ensure valid list of items.");
-      }
+      alert("Order successfully marked Placed in IDOO!");
+      fetchData();
     }
   </script>
 </body>
